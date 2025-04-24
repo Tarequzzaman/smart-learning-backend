@@ -1,0 +1,23 @@
+version: '3'
+volumes:
+    data: {}
+services:
+    web:
+        build: .
+        ports:
+            - 8004:8000
+        command: uvicorn app.main:app --host 0.0.0.0 --reload
+        volumes:
+            - .:/app
+        depends_on:
+            - db
+    db:
+        image: postgres:17.4
+        environment:
+            - POSTGRES_DB=${DB_NAME}
+            - POSTGRES_USER=${DB_USER}
+            - POSTGRES_PASSWORD=${DB_PASSWORD}  
+        ports:
+            - "5432:5432"
+        volumes:
+            - data:/var/lib/postgresql/data 
