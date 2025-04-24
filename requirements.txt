@@ -1,0 +1,6 @@
+psycopg2
+fastapi
+SQLAlchemy
+uvicorn
+python-dotenv
+pydantic-settings>=2.0.0
