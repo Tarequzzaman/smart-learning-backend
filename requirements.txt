@@ -4,3 +4,8 @@ SQLAlchemy
 uvicorn
 python-dotenv
 pydantic-settings>=2.0.0
+pydantic[email]
+passlib
+passlib[bcrypt]
+python-multipart
+PyJWT
