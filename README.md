@@ -29,7 +29,10 @@ docker-compose up   -d
 Visit: 
 http://127.0.0.1:8004/docs
 
+
 Log in API: 
+
+make sure you must give grant_type=password
 
 ```
 curl -X 'POST' \

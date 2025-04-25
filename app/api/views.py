@@ -1,10 +1,11 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, status, Security
 from fastapi import Depends, HTTPException
 from fastapi.security import OAuth2PasswordRequestForm
 from app.db import crud, schemas, database
 from sqlalchemy.orm import Session
 from app.services import auth
 from fastapi.responses import JSONResponse
+from typing import Annotated, List
 
 # from app.dependencies.auth import get_current_active_user  # Import from auth setup
 
@@ -50,17 +51,70 @@ async def login_for_access_token(
     }
 
 
-@router.post("/topics", status_code=201)
+"""
+All the topic related API here 
+"""
+
+@router.post("/topics", response_model=schemas.TopicResponse, status_code=status.HTTP_201_CREATED)
 async def create_topic(
+    current_user: Annotated[schemas.UserOut, Depends(auth.get_current_active_user)],
     topic: schemas.TopicCreate,
+    db: Session = Depends(database.get_db),
+):
+    if not current_user.is_active:
+        raise HTTPException(status_code=403, detail="Inactive user")
+    return crud.create_topic(db=db, topic=topic, user_id= current_user.id)
+
+
+
+@router.get("/topics", response_model=List[schemas.TopicResponse])
+def get_all_topics(
+    db: Session = Depends(database.get_db),
     current_user: schemas.UserOut = Depends(auth.get_current_active_user)
 ):
-    print(f"Creating topic by: {current_user.last_name}")
+    if not current_user.is_active:
+        raise HTTPException(status_code=403, detail="Inactive user")
+    return crud.get_all_topics(db)
 
-    return {
-        "msg": "Topic created successfully",
-        "created_by": current_user.last_name,
-        "topic": topic
-    }
+
+
+@router.put("/topics/{topic_id}", response_model=schemas.TopicResponse)
+def update_topic(
+    topic_id: int,
+    topic_data: schemas.TopicCreate,
+    db: Session = Depends(database.get_db),
+    current_user: schemas.UserOut = Depends(auth.get_current_active_user)
+):
+    if not current_user.is_active:
+        raise HTTPException(status_code=403, detail="Inactive user")
+    
+    db_topic = crud.get_topic_by_id(db, topic_id)
+    if not db_topic:
+        raise HTTPException(status_code=404, detail="Topic not found")
+
+    return crud.update_topic(db, db_topic, topic_data)
+
+
+@router.delete("/topics/{topic_id}", status_code=204)
+def delete_topic(
+    topic_id: int,
+    db: Session = Depends(database.get_db),
+    current_user: schemas.UserOut = Depends(auth.get_current_active_user)
+):
+    if not current_user.is_active:
+        raise HTTPException(status_code=403, detail="Inactive user")
+    
+    topic = crud.get_topic_by_id(db, topic_id)
+    if not topic:
+        raise HTTPException(status_code=404, detail="Topic not found")
+    
+    crud.delete_topic(db, topic)
+    return 
+
+
+
+
+
+
 
 

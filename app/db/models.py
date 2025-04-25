@@ -22,3 +22,16 @@ class User(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
+    topics = relationship("Topic", back_populates="creator", cascade="all, delete-orphan")
+
+
+
+class Topic(Base):
+    __tablename__ = "topics"
+
+    id = Column(Integer, primary_key=True, index=True)
+    title = Column(String, index=True)
+    description = Column(String)
+    created_by_id = Column(Integer, ForeignKey("users.id"))
+
+    creator = relationship("User", back_populates="topics")

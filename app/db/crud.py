@@ -37,3 +37,35 @@ def authenticate_user(db: Session, email: str, password: str) -> Optional[models
     return user
 
 
+
+def create_topic(db: Session, topic: schemas.TopicCreate, user_id: int):
+    new_topic = models.Topic(
+        title=topic.title,
+        description=topic.description,
+        created_by_id=user_id
+    )
+    db.add(new_topic)
+    db.commit()
+    db.refresh(new_topic)
+    return new_topic
+
+
+def get_all_topics(db: Session):
+    return db.query(models.Topic).order_by(models.Topic.id.asc()).all()
+
+def get_topic_by_id(db: Session, topic_id: int):
+    return db.query(models.Topic).filter(models.Topic.id == topic_id).first()
+
+def update_topic(db: Session, db_topic: models.Topic, updated: schemas.TopicCreate):
+    db_topic.title = updated.title
+    db_topic.description = updated.description
+    db.commit()
+    db.refresh(db_topic)
+    return db_topic
+
+def delete_topic(db: Session, topic: models.Topic):
+    db.delete(topic)
+    db.commit()
+
+
+

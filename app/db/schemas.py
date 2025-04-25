@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field
 from typing import Union
 
 class UserCreate(BaseModel):
@@ -20,7 +20,7 @@ class UserOut(BaseModel):
     is_active: bool
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class TokenWithUser(BaseModel):
     access_token: str
@@ -36,8 +36,36 @@ class LogInUser(BaseModel):
 class TopicCreate(BaseModel):
     title: str
     description: str
-    created_by: int
 
+class TopicResponse(TopicCreate):
+    id: int
+    created_by_id: int
+
+    class Config:
+        from_attributes = True
 
 class TokenData(BaseModel):
     email: Union[str, None] = None
+
+
+
+class CreatorInfo(BaseModel):
+    id: int
+    first_name: str
+    last_name: str
+    email: str
+
+    class Config:
+        from_attributes = True
+
+class TopicResponse(BaseModel):
+    id: int
+    title: str
+    description: str
+    created_by: CreatorInfo = Field(..., alias="creator")  
+
+    class Config:
+        from_attributes = True
+        validate_by_name = True
+
+
