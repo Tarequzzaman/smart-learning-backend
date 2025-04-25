@@ -4,17 +4,18 @@ from app.services.password_helper import get_password_hash , verify_password
 from typing import Optional
 
 
+
 def get_user(db: Session, user_id: int):
     return db.query(models.User).filter(models.User.id == user_id).first()
-
 
 def get_user_by_email(db: Session, email: str):
     return db.query(models.User).filter(models.User.email == email).first()
 
+def get_user_by_id(db: Session, user_id: int):
+    return db.query(models.User).filter(models.User.id == user_id).first()
 
-def get_users(db: Session, skip: int = 0, limit: int = 100):
-    return db.query(models.User).offset(skip).limit(limit).all()
-
+def get_all_users(db: Session):
+    return db.query(models.User).order_by(models.User.id.asc()).all()
 
 def create_user(db: Session, user: schemas.UserCreate):
     db_user = models.User(
@@ -29,14 +30,24 @@ def create_user(db: Session, user: schemas.UserCreate):
     db.refresh(db_user)
     return db_user
 
+def update_user(db: Session, user: models.User, user_update: schemas.UserUpdate):
+    user.first_name = user_update.first_name
+    user.last_name = user_update.last_name
+    user.role = user_update.role if user_update.role in ('admin', 'user') else 'user'
+    db.commit()
+    db.refresh(user)
+    return user
+
+def delete_user(db: Session, user: models.User):
+    db.delete(user)
+    db.commit()
+    return {"detail": "User deleted successfully"}
 
 def authenticate_user(db: Session, email: str, password: str) -> Optional[models.User]:
     user = db.query(models.User).filter(models.User.email == email).first()
     if not user or not verify_password(password, user.hashed_password):
         return None
     return user
-
-
 
 def create_topic(db: Session, topic: schemas.TopicCreate, user_id: int):
     new_topic = models.Topic(
@@ -48,7 +59,6 @@ def create_topic(db: Session, topic: schemas.TopicCreate, user_id: int):
     db.commit()
     db.refresh(new_topic)
     return new_topic
-
 
 def get_all_topics(db: Session):
     return db.query(models.Topic).order_by(models.Topic.id.asc()).all()
@@ -66,6 +76,3 @@ def update_topic(db: Session, db_topic: models.Topic, updated: schemas.TopicCrea
 def delete_topic(db: Session, topic: models.Topic):
     db.delete(topic)
     db.commit()
-
-
-

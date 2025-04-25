@@ -22,6 +22,12 @@ class UserOut(BaseModel):
     class Config:
         from_attributes = True
 
+class UserUpdate(BaseModel):
+    first_name: str
+    last_name: str
+    role: str
+
+
 class TokenWithUser(BaseModel):
     access_token: str
     token_type: str

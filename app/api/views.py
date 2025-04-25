@@ -63,6 +63,11 @@ async def create_topic(
 ):
     if not current_user.is_active:
         raise HTTPException(status_code=403, detail="Inactive user")
+    if current_user.role != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not have admin permissions",
+        )
     return crud.create_topic(db=db, topic=topic, user_id= current_user.id)
 
 
@@ -70,10 +75,10 @@ async def create_topic(
 @router.get("/topics", response_model=List[schemas.TopicResponse])
 def get_all_topics(
     db: Session = Depends(database.get_db),
-    current_user: schemas.UserOut = Depends(auth.get_current_active_user)
+    # current_user: schemas.UserOut = Depends(auth.get_current_active_user)
 ):
-    if not current_user.is_active:
-        raise HTTPException(status_code=403, detail="Inactive user")
+    # if not current_user.is_active:
+    #     raise HTTPException(status_code=403, detail="Inactive user")
     return crud.get_all_topics(db)
 
 
@@ -87,6 +92,12 @@ def update_topic(
 ):
     if not current_user.is_active:
         raise HTTPException(status_code=403, detail="Inactive user")
+    
+    if current_user.role != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not have admin permissions",
+        )
     
     db_topic = crud.get_topic_by_id(db, topic_id)
     if not db_topic:
@@ -104,6 +115,12 @@ def delete_topic(
     if not current_user.is_active:
         raise HTTPException(status_code=403, detail="Inactive user")
     
+    if current_user.role != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not have admin permissions",
+        )
+    
     topic = crud.get_topic_by_id(db, topic_id)
     if not topic:
         raise HTTPException(status_code=404, detail="Topic not found")
@@ -112,7 +129,58 @@ def delete_topic(
     return 
 
 
+""" 
+Users APIs 
 
+"""
+
+
+@router.get("/users", response_model=List[schemas.UserOut])
+def get_all_users(
+    db: Session = Depends(database.get_db),
+    current_user: schemas.UserOut = Depends(auth.get_current_active_user),
+):
+    if current_user.role != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not have admin permissions",
+        )
+
+    return crud.get_all_users(db)
+
+
+
+
+@router.put("/users/{user_id}", response_model=schemas.UserOut)
+def update_user(
+    user_id: int,
+    user_update: schemas.UserUpdate,
+    db: Session = Depends(database.get_db),
+    current_user: schemas.UserOut = Depends(auth.get_current_active_user)
+):
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin privileges required")
+    user = crud.get_user(db=db, user_id=user_id)
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+
+    return crud.update_user(db, user, user_update)
+
+
+@router.delete("/users/{user_id}", status_code=204)
+def delete_user_route(
+    user_id: int,
+    db: Session = Depends(database.get_db),
+    current_user: schemas.UserOut = Depends(auth.get_current_active_user),
+):
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="You do not have admin permissions")
+
+    user = crud.get_user_by_id(db=db, user_id=user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    return crud.delete_user(db=db, user=user)
 
 
 
