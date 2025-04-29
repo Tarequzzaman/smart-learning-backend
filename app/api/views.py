@@ -3,9 +3,12 @@ from fastapi import Depends, HTTPException
 from fastapi.security import OAuth2PasswordRequestForm
 from app.db import crud, schemas, database
 from sqlalchemy.orm import Session
-from app.services import auth
+from app.services import auth, email_helper
 from fastapi.responses import JSONResponse
 from typing import Annotated, List
+import random
+from datetime import datetime, timedelta
+
 
 # from app.dependencies.auth import get_current_active_user  # Import from auth setup
 
@@ -186,3 +189,64 @@ def delete_user_route(
 
 
 
+
+@router.post("/forgot-password/send-code")
+async def send_forgot_password_code(
+    request: schemas.ForgotPasswordRequest,
+
+    db: Session = Depends(database.get_db),
+    ):
+    email = request.email
+
+    code = str(random.randint(100000, 999999))
+    user = crud.get_user_by_email(db = db, email=email)
+    if not user:
+        raise HTTPException(status_code=404, detail="No active user found with this email.")
+    crud.delete_old_pending_code(db=db, user_id=user.id)
+    expiry_time =  datetime.now() + timedelta(minutes=10)
+    user_name = f'{user.first_name} {user.last_name}'
+    try:
+        email_helper.send_email(email, code , user_name)
+        crud.insert_log_in_code(
+            db=db,
+            code=code,
+            user_id=user.id,
+            expiry_time=expiry_time
+        )
+        return {"message": "Reset code sent to your email address."}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to send reset code: {str(e)}")
+
+
+@router.post("/forgot-password/verify-code")
+async def verify_reset_code(
+    request: schemas.VerifyResetCodeRequest,
+    db: Session = Depends(database.get_db),
+):
+    email = request.email
+    code = request.code
+    user = crud.get_user_by_email(db=db, email=email)
+    if not user:
+        raise HTTPException(status_code=404, detail="No active user found with this email.")
+    reset_entry = crud.get_pending_code_by_user(db=db, user_id=user.id)
+    if not reset_entry or reset_entry.code != code:
+        raise HTTPException(status_code=400, detail="Invalid code.")
+    if reset_entry.expiry_time < datetime.now():
+        raise HTTPException(status_code=400, detail="Code expired.")
+    crud.accept_reset_code(db=db, reset_entry=reset_entry)  # mark as accepted
+
+    return {"message": "Reset code verified successfully."}
+
+
+@router.post("/forgot-password/reset-password")
+async def reset_password(request: schemas.ResetPasswordRequest, db: Session = Depends(database.get_db)):
+    email = request.email
+    new_password = request.password
+
+    user = crud.get_user_by_email(db=db, email=email)
+    if not user:
+        raise HTTPException(status_code=404, detail="No active user found.")
+
+    crud.reseat_password(db=db, user=user, password=new_password)
+
+    return {"message": "Password reset successfully."}
