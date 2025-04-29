@@ -2,6 +2,7 @@ from sqlalchemy.orm import Session
 from app.db import models , schemas
 from app.services.password_helper import get_password_hash , verify_password
 from typing import Optional
+from datetime import datetime
 
 
 
@@ -75,4 +76,42 @@ def update_topic(db: Session, db_topic: models.Topic, updated: schemas.TopicCrea
 
 def delete_topic(db: Session, topic: models.Topic):
     db.delete(topic)
+    db.commit()
+
+
+def insert_log_in_code(db: Session, code: str, user_id: int, expiry_time) -> None:
+    reset_code_entry = models.PasswordResetCode(
+            user_id=user_id,
+            code=code,
+            expiry_time=expiry_time,
+            status="pending"
+    )
+    db.add(reset_code_entry)
+    db.commit()
+
+
+def delete_old_pending_code(db: Session, user_id: int) -> None:
+    db.query(models.PasswordResetCode).filter(
+        models.PasswordResetCode.user_id == user_id,
+          models.PasswordResetCode.status == "pending"
+    ).delete()
+    db.commit()
+
+
+def get_pending_code_by_user(db: Session, user_id: int):
+    return db.query(models.PasswordResetCode).filter(
+        models.PasswordResetCode.user_id == user_id,
+        models.PasswordResetCode.status == "pending",
+        models.PasswordResetCode.expiry_time > datetime.now()
+    ).first()
+
+def accept_reset_code(db: Session, reset_entry: models.PasswordResetCode):
+    reset_entry.status = "accepted"
+    db.commit()
+
+
+
+def reseat_password(db: Session, user: models.User, password: str) -> None:
+    hashed_password = get_password_hash(password)
+    user.hashed_password = hashed_password
     db.commit()

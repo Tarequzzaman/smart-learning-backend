@@ -75,3 +75,16 @@ class TopicResponse(BaseModel):
         validate_by_name = True
 
 
+class ForgotPasswordRequest(BaseModel):
+    email: EmailStr
+
+
+
+class VerifyResetCodeRequest(BaseModel):
+    email: EmailStr
+    code: str
+
+
+class ResetPasswordRequest(BaseModel):
+    email: EmailStr
+    password: str

@@ -36,3 +36,19 @@ def get_jwt_token_cred():
     return JWT_Token()
 
 
+
+
+class EmailCredentials(BaseSettings):
+    SMTP_SERVER:str
+    SMTP_PORT: int
+    GMAIL_USER: str
+    GMAIL_PASSWORD: str
+
+    class Config:
+        env_file = ".env"
+        extra = Extra.ignore  # ✅ allow unrelated fields
+
+
+@lru_cache
+def get_email_cred():
+    return EmailCredentials()

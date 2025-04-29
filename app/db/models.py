@@ -2,6 +2,7 @@ from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, Enum, func,
 from sqlalchemy.orm import relationship
 from app.db.database import Base
 import enum
+from datetime import datetime
 
 class UserRole(str, enum.Enum):
     admin = "admin"
@@ -35,3 +36,15 @@ class Topic(Base):
     created_by_id = Column(Integer, ForeignKey("users.id"))
 
     creator = relationship("User", back_populates="topics")
+
+
+class PasswordResetCode(Base):
+    __tablename__ = "password_reset_codes"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)  # 👈 foreign key
+    code = Column(String(6), nullable=False)
+    expiry_time = Column(DateTime, nullable=False)
+    status = Column(String(20), nullable=False, default="pending")
+
+    user = relationship("User")  # Optional, for easy joining later
