@@ -4,6 +4,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 from app.db import crud, schemas, database
 from sqlalchemy.orm import Session
 from app.services import auth, email_helper
+from app.celery.tasks import create_course_for_topic
 from fastapi.responses import JSONResponse
 from typing import Annotated, List
 import random
@@ -71,7 +72,10 @@ async def create_topic(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="You do not have admin permissions",
         )
-    return crud.create_topic(db=db, topic=topic, user_id= current_user.id)
+    topic = crud.create_topic(db=db, topic=topic, user_id= current_user.id)
+    create_course_for_topic.delay(topic.id, topic.title) ## add background process for courses
+    return topic
+
 
 
 
