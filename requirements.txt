@@ -5,7 +5,11 @@ uvicorn
 python-dotenv
 pydantic-settings>=2.0.0
 pydantic[email]
-passlib
+bcrypt<4.0.0
 passlib[bcrypt]
 python-multipart
 PyJWT
+celery
+flower
+redis>=4.0.0
+

@@ -23,21 +23,6 @@ class JWT_Token(BaseSettings):
         env_file = ".env"
         extra = Extra.ignore  # ✅ allow unrelated fields
 
-
-
-@lru_cache
-def get_settings():
-    return Settings()
-
-
-
-@lru_cache
-def get_jwt_token_cred():
-    return JWT_Token()
-
-
-
-
 class EmailCredentials(BaseSettings):
     SMTP_SERVER:str
     SMTP_PORT: int
@@ -49,6 +34,29 @@ class EmailCredentials(BaseSettings):
         extra = Extra.ignore  # ✅ allow unrelated fields
 
 
+class CeleryCredentials(BaseSettings):
+    CELERY_BROKER_URL: str
+    CELERY_RESULT_BACKEND: str
+    class Config:
+        env_file = ".env"
+        extra = Extra.ignore 
+
 @lru_cache
 def get_email_cred():
     return EmailCredentials()
+
+
+@lru_cache
+def get_settings():
+    return Settings()
+
+
+@lru_cache
+def get_jwt_token_cred():
+    return JWT_Token()
+
+
+@lru_cache
+def get_celery_cred():
+    return CeleryCredentials()
+
