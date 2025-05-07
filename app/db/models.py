@@ -24,6 +24,8 @@ class User(Base):
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
     topics = relationship("Topic", back_populates="creator", cascade="all, delete-orphan")
+    topic_preferences = relationship("UserTopicPreference", back_populates="user", cascade="all, delete-orphan")
+
 
 
 
@@ -37,6 +39,8 @@ class Topic(Base):
 
     creator = relationship("User", back_populates="topics")
     courses = relationship("Course", back_populates="topic", cascade="all, delete-orphan")
+    user_preferences = relationship("UserTopicPreference", back_populates="topic", cascade="all, delete-orphan")
+
 
 
 class UserTopicPreference(Base):
