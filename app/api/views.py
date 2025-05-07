@@ -73,7 +73,7 @@ async def create_topic(
             detail="You do not have admin permissions",
         )
     topic = crud.create_topic(db=db, topic=topic, user_id= current_user.id)
-    create_course_for_topic.delay(topic.id, topic.title) ## add background process for courses
+    create_course_for_topic.delay(topic.id, topic.title, topic.description) ## add background process for courses
     return topic
 
 
@@ -82,10 +82,7 @@ async def create_topic(
 @router.get("/topics", response_model=List[schemas.TopicResponse])
 def get_all_topics(
     db: Session = Depends(database.get_db),
-    # current_user: schemas.UserOut = Depends(auth.get_current_active_user)
 ):
-    # if not current_user.is_active:
-    #     raise HTTPException(status_code=403, detail="Inactive user")
     return crud.get_all_topics(db)
 
 
