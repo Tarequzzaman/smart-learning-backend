@@ -89,6 +89,7 @@ class ResetPasswordRequest(BaseModel):
     email: EmailStr
     password: str
 
+
 class UserInterestsStatus(BaseModel):
     hasInterests: bool
 
@@ -97,3 +98,15 @@ class TopicPreferenceRequest(BaseModel):
     topic_ids: List[int]  
 
 
+
+class CourseOut(BaseModel):
+    id: int
+    course_title: str
+    course_description: str
+    course_level: str
+    is_published: bool
+    is_detail_created_by_ai: bool
+    topic_id: int
+
+    class Config:
+        orm_mode = True
