@@ -45,6 +45,15 @@ class CeleryCredentials(BaseSettings):
 class OpenAICredentails(BaseSettings):
     OPEN_AI_API_KEY: str
 
+
+class MongoCredentails(BaseSettings):
+    MONGO_INITDB_ROOT_USERNAME: str
+    MONGO_INITDB_ROOT_PASSWORD: str
+    MONGO_DB_NAME: str
+    class Config:
+        env_file = ".env"
+        extra = Extra.ignore 
+
 @lru_cache
 def get_email_cred():
     return EmailCredentials()
@@ -65,8 +74,11 @@ def get_celery_cred():
     return CeleryCredentials()
 
 
-
-
 @lru_cache
 def get_open_ai_cred():
     return OpenAICredentails()
+
+
+@lru_cache
+def get_mongo_cred():
+    return MongoCredentails()

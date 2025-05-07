@@ -13,4 +13,6 @@ celery
 flower
 redis>=4.0.0
 openai
-
+pymongo
+tqdm
+loguru
