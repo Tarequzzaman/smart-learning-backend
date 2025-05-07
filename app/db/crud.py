@@ -64,6 +64,10 @@ def create_topic(db: Session, topic: schemas.TopicCreate, user_id: int):
 def get_all_topics(db: Session):
     return db.query(models.Topic).order_by(models.Topic.id.asc()).all()
 
+
+def get_all_courses(db: Session):
+    return db.query(models.Course).filter(models.Course.is_detail_created_by_ai == True).all()
+
 def get_topic_by_id(db: Session, topic_id: int):
     return db.query(models.Topic).filter(models.Topic.id == topic_id).first()
 
@@ -135,3 +139,16 @@ def create_course(
     db.add(db_course)
     db.commit()
     db.refresh(db_course)
+    return db_course
+
+def mark_course_as_built(db: Session, course_id: int):
+    db.query(models.Course).filter(models.Course.id == course_id).update({
+        "is_detail_created_by_ai": True
+    })
+    db.commit()
+
+def mark_topic_published(db: Session, topic_id: int):
+    db.query(models.Topic).filter(models.Topic.id == topic_id).update({
+        "is_published": True
+    })
+    db.commit()
