@@ -39,6 +39,18 @@ class Topic(Base):
     courses = relationship("Course", back_populates="topic", cascade="all, delete-orphan")
 
 
+class UserTopicPreference(Base):
+    __tablename__ = "user_topic_preference"  # Correct table name
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    topic_id = Column(Integer, ForeignKey("topics.id"), nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    user = relationship("User", back_populates="topic_preferences")
+    topic = relationship("Topic", back_populates="user_preferences")
+
+
 class Course(Base):
     __tablename__ = "courses"
 

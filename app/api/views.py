@@ -59,6 +59,30 @@ async def login_for_access_token(
 All the topic related API here 
 """
 
+
+@router.get("/users/interests", response_model=schemas.UserInterestsStatus)
+def get_user_interests_status(
+    db: Session = Depends(database.get_db),
+    current_user: schemas.UserOut = Depends(auth.get_current_active_user),
+):
+    interests = crud.get_user_interests(db, user_id=current_user.id)
+    return {"hasInterests": bool(interests)}  
+
+
+@router.post("/users/topic-preference")
+def add_user_topic_preferences(
+    preference_data: schemas.TopicPreferenceRequest,  
+    db: Session = Depends(database.get_db),
+    current_user: schemas.UserOut = Depends(auth.get_current_active_user)
+):
+    topic_ids = preference_data.topic_ids
+
+
+    preferences = crud.add_user_topic_preferences(db=db, user_id=current_user.id, topic_ids=topic_ids)
+    
+    return {"message": f"User has shown interest in topics: {', '.join(map(str, [preference.topic_id for preference in preferences]))}"}
+
+
 @router.post("/topics", response_model=schemas.TopicResponse, status_code=status.HTTP_201_CREATED)
 async def create_topic(
     current_user: Annotated[schemas.UserOut, Depends(auth.get_current_active_user)],
