@@ -9,6 +9,7 @@ from fastapi.responses import JSONResponse
 from typing import Annotated, List
 import random
 from datetime import datetime, timedelta
+from app.db.mongo_db import mongodb_client
 
 
 # from app.dependencies.auth import get_current_active_user  # Import from auth setup
@@ -275,3 +276,28 @@ async def reset_password(request: schemas.ResetPasswordRequest, db: Session = De
     crud.reseat_password(db=db, user=user, password=new_password)
 
     return {"message": "Password reset successfully."}
+
+
+@router.get("/courses/{course_id}")
+def get_full_course(
+    course_id: int, 
+    current_user: schemas.UserOut = Depends(auth.get_current_active_user),             
+    ):
+    """
+    Fetch the full course content from MongoDB by course_id.
+    """
+    course_doc = mongodb_client.courses.find_one({"course_id": course_id})
+    if not course_doc:
+        raise HTTPException(status_code=404, detail="Course not found")
+    # Convert ObjectId to string for JSON serialization
+    course_doc["_id"] = str(course_doc["_id"])
+
+    return course_doc['course_details']
+
+
+@router.get("/courses", response_model=List[schemas.CourseOut])
+def get_ai_generated_courses(
+    db: Session = Depends(database.get_db),
+    current_user: schemas.UserOut = Depends(auth.get_current_active_user),
+):
+    return  crud.get_all_courses(db=db)

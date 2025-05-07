@@ -34,7 +34,7 @@ class Topic(Base):
     title = Column(String, index=True)
     description = Column(String)
     created_by_id = Column(Integer, ForeignKey("users.id"))
-
+    is_published = Column(Boolean, default=False)
     creator = relationship("User", back_populates="topics")
     courses = relationship("Course", back_populates="topic", cascade="all, delete-orphan")
 
@@ -58,10 +58,11 @@ class Course(Base):
     course_title = Column(String, nullable=False)
     course_description = Column(String, nullable=False)
     course_level = Column(String, nullable=False)
-
+    is_published = Column(Boolean, default=False)
+    is_detail_created_by_ai = Column(Boolean, default=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
-
+ 
     topic_id = Column(Integer, ForeignKey("topics.id"), nullable=False)
     topic = relationship("Topic", back_populates="courses")
 
