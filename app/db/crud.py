@@ -115,3 +115,23 @@ def reseat_password(db: Session, user: models.User, password: str) -> None:
     hashed_password = get_password_hash(password)
     user.hashed_password = hashed_password
     db.commit()
+
+
+
+def create_course(
+        db: Session,
+        course_title: str,
+        course_description: str,
+        course_level: str,
+        topic_id : int
+    ) -> None:
+
+    db_course = models.Course(
+        course_title=course_title,
+        course_description=course_description,
+        course_level=course_level,
+        topic_id=topic_id,
+    )
+    db.add(db_course)
+    db.commit()
+    db.refresh(db_course)

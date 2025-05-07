@@ -21,7 +21,7 @@ class JWT_Token(BaseSettings):
 
     class Config:
         env_file = ".env"
-        extra = Extra.ignore  # ✅ allow unrelated fields
+        extra = Extra.ignore 
 
 class EmailCredentials(BaseSettings):
     SMTP_SERVER:str
@@ -31,7 +31,7 @@ class EmailCredentials(BaseSettings):
 
     class Config:
         env_file = ".env"
-        extra = Extra.ignore  # ✅ allow unrelated fields
+        extra = Extra.ignore  
 
 
 class CeleryCredentials(BaseSettings):
@@ -40,6 +40,10 @@ class CeleryCredentials(BaseSettings):
     class Config:
         env_file = ".env"
         extra = Extra.ignore 
+
+
+class OpenAICredentails(BaseSettings):
+    OPEN_AI_API_KEY: str
 
 @lru_cache
 def get_email_cred():
@@ -60,3 +64,9 @@ def get_jwt_token_cred():
 def get_celery_cred():
     return CeleryCredentials()
 
+
+
+
+@lru_cache
+def get_open_ai_cred():
+    return OpenAICredentails()

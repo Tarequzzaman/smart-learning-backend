@@ -36,6 +36,23 @@ class Topic(Base):
     created_by_id = Column(Integer, ForeignKey("users.id"))
 
     creator = relationship("User", back_populates="topics")
+    courses = relationship("Course", back_populates="topic", cascade="all, delete-orphan")
+
+
+class Course(Base):
+    __tablename__ = "courses"
+
+    id = Column(Integer, primary_key=True, index=True)
+    course_title = Column(String, nullable=False)
+    course_description = Column(String, nullable=False)
+    course_level = Column(String, nullable=False)
+
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    topic_id = Column(Integer, ForeignKey("topics.id"), nullable=False)
+    topic = relationship("Topic", back_populates="courses")
+
 
 
 class PasswordResetCode(Base):

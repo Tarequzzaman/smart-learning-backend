@@ -12,4 +12,5 @@ PyJWT
 celery
 flower
 redis>=4.0.0
+openai
 
