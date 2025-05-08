@@ -55,12 +55,6 @@ async def login_for_access_token(
         }
     }
 
-
-"""
-All the topic related API here 
-"""
-
-
 @router.get("/users/interests", response_model=schemas.UserInterestsStatus)
 def get_user_interests_status(
     db: Session = Depends(database.get_db),
@@ -77,10 +71,7 @@ def add_user_topic_preferences(
     current_user: schemas.UserOut = Depends(auth.get_current_active_user)
 ):
     topic_ids = preference_data.topic_ids
-
-
     preferences = crud.add_user_topic_preferences(db=db, user_id=current_user.id, topic_ids=topic_ids)
-    
     return {"message": f"User has shown interest in topics: {', '.join(map(str, [preference.topic_id for preference in preferences]))}"}
 
 
@@ -157,11 +148,6 @@ def delete_topic(
     crud.delete_topic(db, topic)
     return 
 
-
-""" 
-Users APIs 
-
-"""
 
 
 @router.get("/users", response_model=List[schemas.UserOut])
@@ -301,3 +287,76 @@ def get_ai_generated_courses(
     current_user: schemas.UserOut = Depends(auth.get_current_active_user),
 ):
     return  crud.get_all_courses(db=db)
+
+
+
+@router.get("/mycourses", response_model=List[schemas.CourseOut])
+def get_enrolled_courses(
+    user_id: int, 
+    db: Session = Depends(database.get_db),
+    current_user: schemas.UserOut = Depends(auth.get_current_active_user),
+):
+    return   crud.get_enrolled_courses(db=db, user_id=user_id)
+
+
+
+@router.get("/recommendations",response_model=List[schemas.CourseOut])
+def get_recommendations_for_user(
+    user_id: int,
+    limit: int = 10,
+    db: Session = Depends(database.get_db), 
+    current_user: schemas.UserOut = Depends(auth.get_current_active_user),
+    ):
+  
+    user_interests = crud.get_user_interested_topics(db, user_id)
+    enrolled_courses = crud.get_enrolled_courses(db=db, user_id=user_id)
+    enrolled_course_ids = [course.id for course in enrolled_courses]
+
+
+    # 3️⃣ Get topics of enrolled courses
+    enrolled_topics = crud.get_topic_ids_from_enrolled_courses(db, user_id)
+    courses = []
+    strategy = ""
+
+    # ✅ SCENARIO 1: No interests + no enrollments
+    if not user_interests and not enrolled_topics:
+        strategy = "random_trending"
+        print(strategy)
+        courses = crud.get_random_courses(db, limit=limit)
+
+    # ✅ SCENARIO 2: No interests + has enrollments
+    elif not user_interests and enrolled_topics:
+        strategy = "related_to_enrollments"
+        courses = crud.get_courses_by_topics(
+            db,
+            topic_ids=enrolled_topics,
+            limit=limit
+        )
+
+    # ✅ SCENARIO 3: Has interests + no enrollments
+    elif user_interests and not enrolled_topics:
+        strategy = "interest_based"
+        courses = crud.get_courses_by_topics(
+            db,
+            topic_ids=user_interests,
+            exclude_course_ids=enrolled_course_ids,  # Just in case, though no enrollments.
+            limit=limit
+        )
+
+    # ✅ SCENARIO 4: Has interests + has enrollments
+    else:
+        strategy = "hybrid_interest_and_enrollment"
+        interest_courses = crud.get_courses_by_topics(
+            db,
+            topic_ids=user_interests,
+            exclude_course_ids=enrolled_course_ids,
+            limit=limit // 2
+        )
+        related_courses = crud.get_courses_by_topics(
+            db,
+            topic_ids=enrolled_topics,
+            exclude_course_ids=enrolled_course_ids,
+            limit=limit - len(interest_courses)
+        )
+        courses = interest_courses + related_courses
+    return courses

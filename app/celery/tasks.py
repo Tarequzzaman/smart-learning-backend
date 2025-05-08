@@ -29,6 +29,7 @@ def create_course_for_topic(topic_id: int, topic_name: str, description: str):
                 course_description=course_description,
                 topic_id=topic_id
             )
+            
             course_id = db_course.id
 
             logger.info(f"[Course: {course_title}] SQL course created (ID: {course_id})")

@@ -1,4 +1,15 @@
-from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, Enum, func, DateTime
+from sqlalchemy import (
+    Boolean, 
+    Column, 
+    ForeignKey,
+    Integer,
+    String,
+    Enum, 
+    func, 
+    DateTime, 
+    UniqueConstraint
+)
+
 from sqlalchemy.orm import relationship
 from app.db.database import Base
 import enum
@@ -25,6 +36,7 @@ class User(Base):
 
     topics = relationship("Topic", back_populates="creator", cascade="all, delete-orphan")
     topic_preferences = relationship("UserTopicPreference", back_populates="user", cascade="all, delete-orphan")
+    course_interactions = relationship("CourseInteraction", back_populates="user")
 
 
 
@@ -43,13 +55,16 @@ class Topic(Base):
 
 
 
+
 class UserTopicPreference(Base):
     __tablename__ = "user_topic_preference"  # Correct table name
 
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     topic_id = Column(Integer, ForeignKey("topics.id"), nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
 
     user = relationship("User", back_populates="topic_preferences")
     topic = relationship("Topic", back_populates="user_preferences")
@@ -69,6 +84,9 @@ class Course(Base):
  
     topic_id = Column(Integer, ForeignKey("topics.id"), nullable=False)
     topic = relationship("Topic", back_populates="courses")
+    
+    user_interactions = relationship("CourseInteraction", back_populates="course")
+
 
 
 
@@ -82,3 +100,30 @@ class PasswordResetCode(Base):
     status = Column(String(20), nullable=False, default="pending")
 
     user = relationship("User")  # Optional, for easy joining later
+
+
+
+class CourseInteraction(Base):
+    __tablename__ = "course_interactions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(
+        Integer, 
+        ForeignKey("users.id", ondelete="CASCADE"),  # ForeignKey with cascade delete
+        nullable=False
+    )
+    course_id = Column(
+        Integer, 
+        ForeignKey("courses.id", ondelete="CASCADE"),  # ForeignKey with cascade delete
+        nullable=False
+    ) 
+    course_progress = Column(Integer, default=0)
+    user = relationship("User", back_populates="course_interactions")
+    course = relationship("Course", back_populates="user_interactions")
+
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    __table_args__ = (
+        UniqueConstraint('user_id', 'course_id', name='uix_user_course'),
+    )
