@@ -360,3 +360,17 @@ def get_recommendations_for_user(
         )
         courses = interest_courses + related_courses
     return courses
+
+
+
+@router.post("/enroll")
+def enroll_in_course(
+    enroll_data: schemas.Enroll,
+    db: Session = Depends(database.get_db), 
+    current_user: schemas.UserOut = Depends(auth.get_current_active_user),
+):
+    """
+    Enroll the logged-in user in a course (safer).
+    """
+    crud.create_course_interaction(db, user_id=enroll_data.user_id, course_id=enroll_data.course_id)
+    return {"status": "success"}

@@ -110,3 +110,8 @@ class CourseOut(BaseModel):
 
     class Config:
         orm_mode = True
+
+
+class Enroll(BaseModel):
+    course_id : int
+    user_id : int 
