@@ -3,6 +3,8 @@ from app.db import models , schemas
 from app.services.password_helper import get_password_hash , verify_password
 from typing import Optional
 from datetime import datetime
+from sqlalchemy.sql.expression import func
+
 
 
 
@@ -139,6 +141,7 @@ def create_course(
     db.add(db_course)
     db.commit()
     db.refresh(db_course)
+    return db_course
 
 
 
@@ -166,9 +169,7 @@ def add_user_topic_preferences(db: Session, user_id: int, topic_ids: list):
 
     for preference in preferences:
         db.refresh(preference)
-
     return preferences 
-    return db_course
 
 def mark_course_as_built(db: Session, course_id: int):
     db.query(models.Course).filter(models.Course.id == course_id).update({
@@ -181,3 +182,93 @@ def mark_topic_published(db: Session, topic_id: int):
         "is_published": True
     })
     db.commit()
+
+
+
+def get_enrolled_courses(db: Session, user_id: int) -> list:
+    """
+    Returns a list of Course objects that the user is enrolled in.
+    """
+    enrolled_courses = (
+        db.query(models.Course)
+        .join(models.CourseInteraction, models.Course.id == models.CourseInteraction.course_id)
+        .filter(models.CourseInteraction.user_id == user_id)
+        .all()
+    )
+    return enrolled_courses
+
+
+
+def get_user_interested_topics(db: Session, user_id: int) -> list:
+    """
+    Fetch a distinct list of topic IDs that the user has shown interest in.
+    """
+    result = (
+        db.query(models.UserTopicPreference.topic_id)
+        .filter(models.UserTopicPreference.user_id == user_id)
+        .distinct()
+        .all()
+    )
+    return [row[0] for row in result]
+
+
+def get_topic_ids_from_enrolled_courses(db: Session, user_id: int) -> list:
+    """
+    Returns a list of topic IDs based on the user's enrolled courses.
+    """
+    topic_ids = (
+        db.query(models.Course.topic_id)
+        .select_from(models.CourseInteraction)
+        .join(models.Course, models.CourseInteraction.course_id == models.Course.id)
+        .filter(models.CourseInteraction.user_id == user_id)
+        .distinct()  # optional: to avoid duplicates
+        .all()
+    )
+    return [topic_id for (topic_id,) in topic_ids]
+
+
+
+def get_random_courses(db: Session, limit: int = 10):
+    """
+    Fetch a random list of published courses from the database.
+    """
+    # Get total count of available courses
+    total_courses = db.query(models.Course).filter(models.Course.is_detail_created_by_ai == True).count()
+    
+    if total_courses == 0:
+        return []
+
+    # If fewer courses than the limit, return all
+    if total_courses <= limit:
+        return db.query(models.Course).filter(models.Course.is_detail_created_by_ai == True).all()
+
+    # Get random offset indices (option 1 - efficient for small datasets)
+    random_courses = (
+        db.query(models.Course)
+        .filter(models.Course.is_detail_created_by_ai == True)
+        .order_by(func.random())
+
+        .limit(limit)
+        .all()
+    )
+
+    return random_courses
+
+
+def get_courses_by_topics(
+    db: Session,
+    topic_ids: list,
+    exclude_course_ids: list,
+    limit: int = 10,
+) -> list:
+    
+    query = db.query(models.Course).filter(
+        models.Course.topic_id.in_(topic_ids),
+        models.Course.is_detail_created_by_ai == True
+    )
+    if exclude_course_ids:
+        query = query.filter(~models.Course.id.in_(exclude_course_ids))
+    return query.order_by(func.random()).limit(limit).all()
+
+
+
