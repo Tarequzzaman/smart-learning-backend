@@ -33,7 +33,7 @@ def generate_courses(topic: str, description: str = "") -> list:
     """
     system_msg = (
         "You are an AI course planner. "
-        "Generate 10 structured course titles for the given topic. "
+        "Generate 6 to 10 structured course titles for the given topic. "
         "The courses ranging from beginner to advanced level. "
         "Each course must include:\n"
         "- A clear, concise title\n"

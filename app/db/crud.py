@@ -272,3 +272,19 @@ def get_courses_by_topics(
 
 
 
+def create_course_interaction(db: Session, user_id: int, course_id: int):
+    existing = db.query(models.CourseInteraction).filter_by(
+        user_id=user_id,
+        course_id=course_id
+    ).first()
+
+    if not existing:
+        new_interaction = models.CourseInteraction(
+            user_id=user_id,
+            course_id=course_id,
+            course_progress=0  # starts at 0%
+        )
+        db.add(new_interaction)
+        db.commit()
+        db.refresh(new_interaction)
+        return new_interaction
