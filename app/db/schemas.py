@@ -1,5 +1,5 @@
 from pydantic import BaseModel, EmailStr, Field
-from typing import Union
+from typing import List, Union
 
 class UserCreate(BaseModel):
     first_name: str
@@ -88,6 +88,15 @@ class VerifyResetCodeRequest(BaseModel):
 class ResetPasswordRequest(BaseModel):
     email: EmailStr
     password: str
+
+
+class UserInterestsStatus(BaseModel):
+    hasInterests: bool
+
+
+class TopicPreferenceRequest(BaseModel):
+    topic_ids: List[int]  
+
 
 
 class CourseOut(BaseModel):

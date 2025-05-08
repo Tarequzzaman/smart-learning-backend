@@ -24,6 +24,8 @@ class User(Base):
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
     topics = relationship("Topic", back_populates="creator", cascade="all, delete-orphan")
+    topic_preferences = relationship("UserTopicPreference", back_populates="user", cascade="all, delete-orphan")
+
 
 
 
@@ -37,6 +39,20 @@ class Topic(Base):
     is_published = Column(Boolean, default=False)
     creator = relationship("User", back_populates="topics")
     courses = relationship("Course", back_populates="topic", cascade="all, delete-orphan")
+    user_preferences = relationship("UserTopicPreference", back_populates="topic", cascade="all, delete-orphan")
+
+
+
+class UserTopicPreference(Base):
+    __tablename__ = "user_topic_preference"  # Correct table name
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    topic_id = Column(Integer, ForeignKey("topics.id"), nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    user = relationship("User", back_populates="topic_preferences")
+    topic = relationship("Topic", back_populates="user_preferences")
 
 
 class Course(Base):

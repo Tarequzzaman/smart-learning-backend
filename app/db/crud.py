@@ -139,6 +139,35 @@ def create_course(
     db.add(db_course)
     db.commit()
     db.refresh(db_course)
+
+
+
+def get_user_interests(db: Session, user_id: int):
+    return db.query(models.Topic).join(models.UserTopicPreference).filter(
+        models.UserTopicPreference.user_id == user_id
+    ).all()
+
+
+
+def add_user_topic_preferences(db: Session, user_id: int, topic_ids: list):
+    preferences = []
+    for topic_id in topic_ids:
+        existing_preference = db.query(models.UserTopicPreference).filter(
+            models.UserTopicPreference.user_id == user_id,
+            models.UserTopicPreference.topic_id == topic_id
+        ).first()
+
+        if not existing_preference:
+            user_topic_preference = models.UserTopicPreference(user_id=user_id, topic_id=topic_id)
+            db.add(user_topic_preference)
+            preferences.append(user_topic_preference)
+
+    db.commit()
+
+    for preference in preferences:
+        db.refresh(preference)
+
+    return preferences 
     return db_course
 
 def mark_course_as_built(db: Session, course_id: int):
