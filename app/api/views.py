@@ -99,6 +99,7 @@ async def create_topic(
 def get_all_topics(
     db: Session = Depends(database.get_db),
 ):
+    
     return crud.get_all_topics(db)
 
 
@@ -246,7 +247,6 @@ async def verify_reset_code(
     if reset_entry.expiry_time < datetime.now():
         raise HTTPException(status_code=400, detail="Code expired.")
     crud.accept_reset_code(db=db, reset_entry=reset_entry)  # mark as accepted
-
     return {"message": "Reset code verified successfully."}
 
 
@@ -254,13 +254,10 @@ async def verify_reset_code(
 async def reset_password(request: schemas.ResetPasswordRequest, db: Session = Depends(database.get_db)):
     email = request.email
     new_password = request.password
-
     user = crud.get_user_by_email(db=db, email=email)
     if not user:
         raise HTTPException(status_code=404, detail="No active user found.")
-
     crud.reseat_password(db=db, user=user, password=new_password)
-
     return {"message": "Password reset successfully."}
 
 
@@ -275,7 +272,6 @@ def get_full_course(
     course_doc = mongodb_client.courses.find_one({"course_id": course_id})
     if not course_doc:
         raise HTTPException(status_code=404, detail="Course not found")
-    # Convert ObjectId to string for JSON serialization
     course_doc["_id"] = str(course_doc["_id"])
 
     return course_doc['course_details']
@@ -287,6 +283,37 @@ def get_ai_generated_courses(
     current_user: schemas.UserOut = Depends(auth.get_current_active_user),
 ):
     return  crud.get_all_courses(db=db)
+
+
+@router.get("/topics/{topic_id}/courses")
+def get_courses_by_topic(
+    topic_id: int,
+    db: Session = Depends(database.get_db),
+    current_user: schemas.UserOut = Depends(auth.get_current_active_user),
+):
+    topic = crud.get_topic_by_id(db=db, topic_id=topic_id)
+    if not topic:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Topic not found"
+        )
+
+    
+    courses = crud.get_courses_by_topics(
+        db=db,
+        topic_ids=[topic_id],
+        exclude_course_ids=[],
+        limit=30
+    )
+
+    return {
+        "topic": {
+            "id": topic.id,
+            "title": topic.title,
+            "description": topic.description,
+        },
+        "courses": courses
+    }
 
 
 

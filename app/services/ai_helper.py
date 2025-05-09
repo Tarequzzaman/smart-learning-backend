@@ -37,7 +37,7 @@ def generate_courses(topic: str, description: str = "") -> list:
         "The courses ranging from beginner to advanced level. "
         "Each course must include:\n"
         "- A clear, concise title\n"
-        "- A 1-2 sentence description of what the course offers (use <br> for line breaks) make sure the content not more than 30 words\n"
+        "- A 1-2 sentence description of what the course offers (use <br> for line breaks) make sure the content not more than 30 - 40 words use bullet point if you think needed\n"
         "- A course level (e.g., Beginner, Intermediate, Advanced)\n"
         "Ensure that all 10 courses are unique in content and coverage.\n"
         "Return the result as a JSON array of objects with keys: title, description, and course_level."

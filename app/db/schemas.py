@@ -43,12 +43,14 @@ class TopicCreate(BaseModel):
     title: str
     description: str
 
-class TopicResponse(TopicCreate):
-    id: int
-    created_by_id: int
+# class TopicResponse(TopicCreate):
+#     id: int
+#     created_by_id: int
 
-    class Config:
-        from_attributes = True
+#     class Config:
+#         from_attributes = True
+#         validate_by_name = True
+
 
 class TokenData(BaseModel):
     email: Union[str, None] = None
@@ -64,15 +66,7 @@ class CreatorInfo(BaseModel):
     class Config:
         from_attributes = True
 
-class TopicResponse(BaseModel):
-    id: int
-    title: str
-    description: str
-    created_by: CreatorInfo = Field(..., alias="creator")  
 
-    class Config:
-        from_attributes = True
-        validate_by_name = True
 
 
 class ForgotPasswordRequest(BaseModel):
@@ -110,6 +104,19 @@ class CourseOut(BaseModel):
 
     class Config:
         orm_mode = True
+
+class TopicResponse(BaseModel):
+    id: int
+    title: str
+    description: str
+    created_by: CreatorInfo = Field(..., alias="creator")  
+    courses: List[CourseOut] = []  # 🔥 Added here
+
+    
+
+    class Config:
+        from_attributes = True
+        validate_by_name = True
 
 
 class Enroll(BaseModel):
