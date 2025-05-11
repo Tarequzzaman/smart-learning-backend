@@ -53,6 +53,9 @@ def update_user_details(db: Session, user: models.User, user_update: schemas.Use
     db.refresh(user)  
     return user
 
+def get_user_selected_topics(db: Session, user_id: int):
+    return db.query(models.Topic).join(models.UserTopicPreference).filter(models.UserTopicPreference.user_id == user_id).all()
+
 def delete_user(db: Session, user: models.User):
     db.delete(user)
     db.commit()
