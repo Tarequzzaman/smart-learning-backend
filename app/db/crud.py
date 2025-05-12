@@ -4,6 +4,8 @@ from app.services.password_helper import get_password_hash , verify_password
 from typing import Optional
 from datetime import datetime
 from sqlalchemy.sql.expression import func
+from sqlalchemy.exc import IntegrityError
+
 
 
 
@@ -288,3 +290,57 @@ def create_course_interaction(db: Session, user_id: int, course_id: int):
         db.commit()
         db.refresh(new_interaction)
         return new_interaction
+
+
+
+def get_course_interaction(db: Session, course_id: int, user_id: int) -> dict:
+    interaction = (
+        db.query(models.CourseInteraction)
+        .filter_by(course_id=course_id, user_id=user_id)
+        .first()
+    )
+
+    if not interaction:
+        return {
+            "user_id": user_id,
+            "course_id": course_id,
+            "course_progress": 0,
+            "message": "No interaction found."
+        }
+
+    return {
+        "user_id": interaction.user_id,
+        "course_id": interaction.course_id,
+        "course_progress": interaction.course_progress,
+        "created_at": interaction.created_at,
+        "updated_at": interaction.updated_at
+    }
+
+
+def update_course_progress(db: Session, user_id: int, course_id: int, new_progress: int):
+    interaction = (
+        db.query(models.CourseInteraction)
+        .filter_by(user_id=user_id, course_id=course_id)
+        .first()
+    )
+
+    if interaction:
+        if new_progress > interaction.course_progress:
+            interaction.course_progress = new_progress
+            db.commit()
+            db.refresh(interaction)
+    else:
+        # Create a new record
+        interaction = models.CourseInteraction(
+            user_id=user_id,
+            course_id=course_id,
+            course_progress=new_progress
+        )
+        db.add(interaction)
+        try:
+            db.commit()
+            db.refresh(interaction)
+        except IntegrityError:
+            db.rollback()
+
+    return interaction
