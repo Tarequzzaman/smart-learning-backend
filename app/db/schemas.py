@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, conint
 from typing import List, Union
 
 class UserCreate(BaseModel):
@@ -126,3 +126,9 @@ class TopicResponse(BaseModel):
 class Enroll(BaseModel):
     course_id : int
     user_id : int 
+
+
+
+class CourseProgressUpdate(BaseModel):
+    course_id: int
+    progress: conint(ge=0, le=100)

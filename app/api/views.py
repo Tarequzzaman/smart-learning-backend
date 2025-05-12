@@ -305,16 +305,20 @@ async def reset_password(request: schemas.ResetPasswordRequest, db: Session = De
 @router.get("/courses/{course_id}")
 def get_full_course(
     course_id: int, 
-    current_user: schemas.UserOut = Depends(auth.get_current_active_user),             
+    current_user: schemas.UserOut = Depends(auth.get_current_active_user), 
+    db: Session = Depends(database.get_db)            
     ):
     """
     Fetch the full course content from MongoDB by course_id.
     """
     course_doc = mongodb_client.courses.find_one({"course_id": course_id})
+    user_id=current_user.id
+    course_interaction_detail = crud.get_course_interaction(db, course_id, user_id)
+    print(course_interaction_detail)
     if not course_doc:
         raise HTTPException(status_code=404, detail="Course not found")
     course_doc["_id"] = str(course_doc["_id"])
-
+    course_doc['course_details']['course_progress'] = course_interaction_detail.get('course_progress', 0)
     return course_doc['course_details']
 
 
@@ -442,3 +446,19 @@ def enroll_in_course(
     """
     crud.create_course_interaction(db, user_id=enroll_data.user_id, course_id=enroll_data.course_id)
     return {"status": "success"}
+
+
+@router.put("/courses/update_progress")
+def update_course_progress(
+    payload: schemas.CourseProgressUpdate,
+    db: Session = Depends(database.get_db),
+    current_user: schemas.UserOut = Depends(auth.get_current_active_user),
+
+):
+    user_id=current_user.id
+    return crud.update_course_progress(
+        db=db,
+        user_id=user_id,
+        course_id=payload.course_id,
+        new_progress=payload.progress
+    )
