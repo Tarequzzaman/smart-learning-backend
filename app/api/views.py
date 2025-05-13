@@ -17,6 +17,47 @@ from app.db.mongo_db import mongodb_client
 
 router = APIRouter()
 
+@router.get("/users/{user_id}/selected-topics", response_model=List[schemas.TopicResponse])
+def get_user_selected_topics(
+    user_id: int,
+    db: Session = Depends(database.get_db),
+    current_user: schemas.UserOut = Depends(auth.get_current_active_user)
+):
+    if current_user.id != user_id:
+        raise HTTPException(status_code=403, detail="You can only get your own selected topics.")
+    
+    selected_topics = crud.get_user_selected_topics(db, user_id=user_id)
+    return selected_topics
+
+
+@router.put("/users/update/{user_id}", response_model=schemas.UserOut)
+def update_user(
+    user_id: int,
+    user_update: schemas.UserUpdateDetails,  
+    db: Session = Depends(database.get_db),
+    current_user: schemas.UserOut = Depends(auth.get_current_active_user) 
+):
+    if current_user.id != user_id:
+        raise HTTPException(status_code=403, detail="You can only update your own profile.")
+    
+    user = crud.get_user(db=db, user_id=user_id)
+    
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+
+    print(f"Updating User ID: {user_id}")
+    print(f"Current User: {current_user}")
+    print(f"User Details to Update: {user_update}")
+
+    # Update the user information in the database
+    updated_user = crud.update_user_details(db=db, user=user, user_update=user_update)
+
+    print(f"Updated User: {updated_user}")
+
+    return updated_user
+
+
+
 
 @router.post("/users/", response_model=schemas.UserOut)
 def create_user(user: schemas.UserCreate, db: Session = Depends(database.get_db)):

@@ -43,6 +43,21 @@ def update_user(db: Session, user: models.User, user_update: schemas.UserUpdate)
     db.refresh(user)
     return user
 
+def update_user_details(db: Session, user: models.User, user_update: schemas.UserUpdateDetails) :
+    # Update only first_name and last_name fields
+    user.first_name = user_update.first_name
+    user.last_name = user_update.last_name
+    
+    print(f"Updating {user.id} with first_name={user.first_name} and last_name={user.last_name}")
+    
+    
+    db.commit()
+    db.refresh(user)  
+    return user
+
+def get_user_selected_topics(db: Session, user_id: int):
+    return db.query(models.Topic).join(models.UserTopicPreference).filter(models.UserTopicPreference.user_id == user_id).all()
+
 def delete_user(db: Session, user: models.User):
     db.delete(user)
     db.commit()

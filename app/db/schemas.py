@@ -27,6 +27,10 @@ class UserUpdate(BaseModel):
     last_name: str
     role: str
 
+class UserUpdateDetails(BaseModel):
+    first_name: str
+    last_name: str
+
 
 class TokenWithUser(BaseModel):
     access_token: str
