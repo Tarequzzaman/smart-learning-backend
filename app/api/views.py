@@ -321,13 +321,26 @@ def get_courses_by_topic(
 
 
 
-@router.get("/mycourses", response_model=List[schemas.CourseOut])
+@router.get("/mycourses", response_model=List[schemas.CourseWithCourseProgress])
 def get_enrolled_courses(
     user_id: int, 
     db: Session = Depends(database.get_db),
     current_user: schemas.UserOut = Depends(auth.get_current_active_user),
 ):
-    return   crud.get_enrolled_courses(db=db, user_id=user_id)
+    results =   crud.get_enrolled_courses(db=db, user_id=user_id)
+    return [
+        schemas.CourseWithCourseProgress(
+            id=course.id,
+            course_title=course.course_title,
+            course_description=course.course_description,
+            course_level=course.course_level,
+            is_published=course.is_published,
+            is_detail_created_by_ai=course.is_detail_created_by_ai,
+            topic_id=course.topic_id,
+            course_progress=interaction.course_progress
+        )
+        for course, interaction in results
+    ]
 
 
 
@@ -340,8 +353,8 @@ def get_recommendations_for_user(
     ):
   
     user_interests = crud.get_user_interested_topics(db, user_id)
-    enrolled_courses = crud.get_enrolled_courses(db=db, user_id=user_id)
-    enrolled_course_ids = [course.id for course in enrolled_courses]
+    enrolled_course_tuples = crud.get_enrolled_courses(db=db, user_id=user_id)
+    enrolled_course_ids = [course.id for course, _ in enrolled_course_tuples]    
 
 
     # 3️⃣ Get topics of enrolled courses
@@ -361,6 +374,7 @@ def get_recommendations_for_user(
         courses = crud.get_courses_by_topics(
             db,
             topic_ids=enrolled_topics,
+            exclude_course_ids=enrolled_course_ids,  # Just in case, though no enrollments.
             limit=limit
         )
 

@@ -103,7 +103,16 @@ class CourseOut(BaseModel):
     topic_id: int
 
     class Config:
-        orm_mode = True
+            from_attributes = True
+            validate_by_name = True
+
+
+class CourseWithCourseProgress(CourseOut):
+    course_progress: int 
+    class Config:
+        from_attributes = True
+        validate_by_name = True
+
 
 class TopicResponse(BaseModel):
     id: int

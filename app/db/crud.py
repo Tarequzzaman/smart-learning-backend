@@ -187,17 +187,20 @@ def mark_topic_published(db: Session, topic_id: int):
 
 
 
-def get_enrolled_courses(db: Session, user_id: int) -> list:
+def get_enrolled_courses(db: Session, user_id: int) -> list[tuple]:
     """
-    Returns a list of Course objects that the user is enrolled in.
+    Returns a list of (Course, CourseInteraction) tuples for the user,
+    ordered by CourseInteraction.updated_at ascending.
     """
     enrolled_courses = (
-        db.query(models.Course)
+        db.query(models.Course, models.CourseInteraction)
         .join(models.CourseInteraction, models.Course.id == models.CourseInteraction.course_id)
         .filter(models.CourseInteraction.user_id == user_id)
+        .order_by(models.CourseInteraction.updated_at.asc())
         .all()
     )
     return enrolled_courses
+
 
 
 
