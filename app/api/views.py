@@ -17,6 +17,7 @@ from app.db.mongo_db import mongodb_client
 
 router = APIRouter()
 
+
 @router.get("/users/{user_id}/selected-topics", response_model=List[schemas.TopicResponse])
 def get_user_selected_topics(
     user_id: int,
@@ -95,6 +96,64 @@ async def login_for_access_token(
             "is_active": user.is_active,
         }
     }
+
+
+
+@router.post("/register/send-code")
+async def send_registration_code(
+    request: schemas.ForgotPasswordRequest,  
+    db: Session = Depends(database.get_db),
+):
+    email = request.email
+
+    user = crud.get_user_by_email(db=db, email=email)
+    if user:
+        raise HTTPException(status_code=400, detail="User already exists with this email.")
+
+    code = str(random.randint(100000, 999999))
+    
+    expiry_time = datetime.now() + timedelta(minutes=10)
+
+    try:
+        email_helper.send_registration_email(email, code, "New User Registration")
+
+        crud.insert_log_in_code(
+            db=db,
+            code=code,
+            user_id=None,  
+            expiry_time=expiry_time,
+            email=email,  
+        )
+
+        return {"message": "Verification code sent to your email address."}
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to send registration code: {str(e)}")
+    
+
+
+@router.post("/register/verify-code")
+async def verify_registration_code(
+    request: schemas.VerifyResetCodeRequest,  
+    db: Session = Depends(database.get_db),
+):
+    email = request.email
+    code = request.code
+
+    reset_entry = crud.get_pending_code_by_email(db=db, email=email)
+    if not reset_entry:
+        raise HTTPException(status_code=404, detail="No pending registration code found for this email.")
+    
+    if reset_entry.code != code:
+        raise HTTPException(status_code=400, detail="Invalid code.")
+    
+    if reset_entry.expiry_time < datetime.now():
+        raise HTTPException(status_code=400, detail="Code expired.")
+    
+    crud.accept_reset_code(db=db, reset_entry=reset_entry)
+
+
+    return {"message": "Code verified successfully. Proceed with your registration."}
 
 @router.get("/users/interests", response_model=schemas.UserInterestsStatus)
 def get_user_interests_status(
