@@ -362,3 +362,56 @@ def update_course_progress(db: Session, user_id: int, course_id: int, new_progre
             db.rollback()
 
     return interaction
+
+
+
+def get_passed_quiz_section(db: Session, user_id: int, course_id: int):
+    return (db.query(models.CourseSectionQuizProgress.section_index)
+                  .filter_by(user_id=user_id, course_id=course_id, passed=True)
+        .all())
+
+
+def insert_quiz_question(db, course_id, section_index, question, options, correct_answer, hint=None):
+    record = models.SectionQuiz(
+        course_id=course_id,
+        section_index=section_index,
+        data={
+            "question": question,
+            "options": options,
+            "correctAnswer": correct_answer,
+            "hint": hint
+        }
+    )
+    db.add(record)
+    db.commit()
+    
+
+
+def get_quizes(db: Session, course_id: int , section_index):
+    return db.query(models.SectionQuiz).filter_by(
+        course_id=course_id,
+        section_index=section_index
+    ).all()
+
+
+def mark_quiz_passed(db: Session ,user_id: int, course_id: int, section_index: int):
+    record = (
+        db.query(models.CourseSectionQuizProgress)
+        .filter_by(user_id=user_id, course_id=course_id, section_index=section_index)
+        .first()
+    )
+    if record:
+        if not record.passed:                      # idempotent
+            record.passed = True
+            record.passed_at = datetime.now()
+    else:
+        record = models.CourseSectionQuizProgress(
+            user_id=user_id,
+            course_id=course_id,
+            section_index=section_index,
+            passed=True,
+            passed_at=datetime.now(),
+        )
+        db.add(record)
+    db.commit()
+    return record

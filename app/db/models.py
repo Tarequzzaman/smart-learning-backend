@@ -11,6 +11,7 @@ from sqlalchemy import (
 )
 
 from sqlalchemy.orm import relationship
+from sqlalchemy.dialects.postgresql import JSON
 from app.db.database import Base
 import enum
 from datetime import datetime
@@ -126,4 +127,28 @@ class CourseInteraction(Base):
 
     __table_args__ = (
         UniqueConstraint('user_id', 'course_id', name='uix_user_course'),
+    )
+
+
+class CourseSectionQuizProgress(Base):
+    __tablename__ = "course_section_quiz_progress"
+
+    user_id       = Column(Integer, ForeignKey("users.id",    ondelete="CASCADE"), primary_key=True)
+    course_id     = Column(Integer, ForeignKey("courses.id",  ondelete="CASCADE"), primary_key=True)
+    section_index = Column(Integer, primary_key=True)
+    passed        = Column(Boolean, default=False, nullable=False)
+    passed_at     = Column(DateTime(timezone=True))
+
+
+
+class SectionQuiz(Base):
+    __tablename__ = "section_quizzes"
+
+    id            = Column(Integer, primary_key=True)
+    course_id     = Column(Integer, ForeignKey("courses.id", ondelete="CASCADE"))
+    section_index = Column(Integer, nullable=False)
+    data          = Column(JSON, nullable=False)
+
+    __table_args__ = (
+        UniqueConstraint('course_id', 'section_index', name='course_selection_index'),
     )
