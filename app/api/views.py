@@ -373,9 +373,14 @@ def get_full_course(
     course_doc = mongodb_client.courses.find_one({"course_id": course_id})
     user_id=current_user.id
     course_interaction_detail = crud.get_course_interaction(db, course_id, user_id)
-    print(course_interaction_detail)
     if not course_doc:
         raise HTTPException(status_code=404, detail="Course not found")
+    total_sections = len(course_doc['course_details']["sections"])
+    quiz_status = {str(i): False for i in range(total_sections)}   # "0": False, "1": False …
+    passed_rows = crud.get_passed_quiz_section(db=db, user_id=current_user.id, course_id=course_id)
+    for row in passed_rows:
+        quiz_status[str(row.section_index)] = True                 # flip to True
+    course_doc['course_details']["quiz_status"] = quiz_status
     course_doc["_id"] = str(course_doc["_id"])
     course_doc['course_details']['course_progress'] = course_interaction_detail.get('course_progress', 0)
     return course_doc['course_details']
@@ -534,4 +539,37 @@ def update_course_progress(
         user_id=user_id,
         course_id=payload.course_id,
         new_progress=payload.progress
+    )
+
+
+@router.get("/section-quizzes")
+def get_section_quizzes(
+    course_id: int,
+    section_index: int ,
+    db: Session = Depends(database.get_db),
+    current_user: schemas.UserOut = Depends(auth.get_current_active_user),
+
+):
+    quizzes = crud.get_quizes(db=db, course_id=course_id, section_index=section_index);
+    return [
+        {
+            "id": q.id,
+            "question": q.data.get("question"),
+            "options": q.data.get("options"),
+            "correctAnswer": q.data.get("correctAnswer"),
+            "hint": q.data.get("hint")
+        }
+        for q in quizzes
+    ]
+
+
+@router.post("/courses/{course_id}/sections/{section_index}/quiz-complete", status_code=204)
+def mark_quiz_complete(
+    course_id: int,
+    section_index: int,
+    db: Session = Depends(database.get_db),
+    current_user: schemas.UserOut = Depends(auth.get_current_active_user),
+):
+    crud.mark_quiz_passed(
+        db=db, user_id=current_user.id, course_id=course_id, section_index=section_index
     )

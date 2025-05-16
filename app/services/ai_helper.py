@@ -127,3 +127,29 @@ def generate_section_content(course_title, course_level, section_title, subsecti
     )
     return response.choices[0].message.content
 
+
+
+def generate_quiz_from_text(section_title: str, raw_markdown: str):
+    """
+    Create multiple-choice questions that directly reference the supplied content.
+    Expects OpenAI (or other LLM) to respond with JSON list:
+      [{question, options, correctAnswer, hint}, …]
+    """
+    prompt = (
+        "You are an AI tutor. You will be given a section’s study material in Markdown.\n"
+        f"Section title: {section_title}\n\n"
+        "### MATERIAL START\n"
+        f"{raw_markdown}\n"
+        "### MATERIAL END\n\n"
+        f"Generate 10 to 15 multiple-choice questions (4 options each). "
+        "Return **ONLY** JSON array; each object must include:"
+        "   question, options (list), correctAnswer (exact option text), hint."
+    )
+    response = client.chat.completions.create(
+        model="gpt-3.5-turbo",
+        messages=[{"role": "user", "content": prompt}],
+        temperature=0.7,
+    )
+
+    content = response.choices[0].message.content
+    return safe_parse_json(content)

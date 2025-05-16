@@ -51,12 +51,11 @@ def create_course_for_topic(topic_id: int, topic_name: str, description: str):
                 continue
 
             # 2️⃣ Generate Content for Each Subsection
-            for section in tqdm(sections_data):
+            for section_index, section in enumerate(tqdm(sections_data)):
                 section_title = section["section_title"]
-                subsections = []
+                subsections   = []
 
                 logger.info(f"Generating content for section: {section_title}")
-
                 for subsection_title in section["subsection_titles"]:
                     try:
                         content = ai_helper.generate_section_content(
@@ -72,7 +71,32 @@ def create_course_for_topic(topic_id: int, topic_name: str, description: str):
                         logger.info(f"✅ Content generated for subsection: {subsection_title}")
                     except Exception as e:
                         logger.error(f"Error generating content for subsection '{subsection_title}': {e}")
-                        raise  # ❗ Keep this if you want to fail the entire course on any subsection failure
+                        raise
+
+                # Join subsection content into one string
+                section_text = "\n\n".join(sub["content"] for sub in subsections)
+
+                # Generate quiz from section content
+                try:
+                    quiz_items = ai_helper.generate_quiz_from_text(
+                        section_title=section_title,
+                        raw_markdown=section_text,
+                    )
+                    logger.info(f"✅ Quiz generated for section: {section_title}")
+
+                    # Save each quiz question to PostgreSQL
+                    for item in quiz_items:
+                        crud.insert_quiz_question(
+                            db=db,
+                            course_id=course_id,
+                            section_index=section_index,
+                            question=item["question"],
+                            options=item["options"],
+                            correct_answer=item["correctAnswer"],
+                            hint=item.get("hint")
+                        )
+                except Exception as e:
+                    logger.warning(f"⚠️ Skipping quiz for section '{section_title}' due to error: {e}")
 
                 full_course["sections"].append({
                     "section_title": section_title,
@@ -89,8 +113,6 @@ def create_course_for_topic(topic_id: int, topic_name: str, description: str):
                 logger.info(f"✅ Course marked as built in SQL (course_id: {course_id})")
             else: 
                 logger.info(f"Error generate subsection {course})")
-
-
 
         except Exception as e:
             logger.error(f"🔥 Unexpected error while processing course '{course_title}': {e}")
