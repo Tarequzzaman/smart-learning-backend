@@ -103,6 +103,17 @@ class PasswordResetCode(Base):
     user = relationship("User")  # Optional, for easy joining later
 
 
+class PendingVerificationCode(Base):
+    __tablename__ = 'pending_verification_codes'
+
+    id = Column(Integer, primary_key=True, index=True)
+    code = Column(String(6), nullable=False)  
+    email = Column(String, nullable=False, unique=True) 
+    expiry_time = Column(DateTime, nullable=False)  
+    accepted = Column(Boolean, default=False)  
+    created_at = Column(DateTime, default=datetime.utcnow) 
+
+
 
 class CourseInteraction(Base):
     __tablename__ = "course_interactions"

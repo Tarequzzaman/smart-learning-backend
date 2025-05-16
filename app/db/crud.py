@@ -415,3 +415,22 @@ def mark_quiz_passed(db: Session ,user_id: int, course_id: int, section_index: i
         db.add(record)
     db.commit()
     return record
+def insert_log_in_code(db: Session, code: str, user_id: int, expiry_time: datetime, email: str = None):
+    new_entry = models.PendingVerificationCode(
+        code=code,
+        expiry_time=expiry_time,
+        email=email,  # Store email temporarily for new users
+    )
+    db.add(new_entry)
+    db.commit()
+    db.refresh(new_entry)
+    return new_entry
+
+def get_pending_code_by_email(db: Session, email: str):
+    return db.query(models.PendingVerificationCode).filter(models.PendingVerificationCode.email == email).first()
+
+def accept_reset_code(db: Session, reset_entry: models.PendingVerificationCode):
+    reset_entry.accepted = True
+    db.commit()
+    db.refresh(reset_entry)
+    return reset_entry
