@@ -160,6 +160,3 @@ class SectionQuiz(Base):
     section_index = Column(Integer, nullable=False)
     data          = Column(JSON, nullable=False)
 
-    __table_args__ = (
-        UniqueConstraint('course_id', 'section_index', name='course_selection_index'),
-    )
