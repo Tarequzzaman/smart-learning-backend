@@ -142,6 +142,7 @@ def generate_quiz_from_text(section_title: str, raw_markdown: str):
         f"{raw_markdown}\n"
         "### MATERIAL END\n\n"
         f"Generate 10 to 15 multiple-choice questions (4 options each). "
+        "The lavel of the quiz should be from easy to difficult"
         "Return **ONLY** JSON array; each object must include:"
         "   question, options (list), correctAnswer (exact option text), hint."
     )
