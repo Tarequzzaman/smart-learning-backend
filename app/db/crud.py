@@ -434,3 +434,14 @@ def accept_reset_code(db: Session, reset_entry: models.PendingVerificationCode):
     db.commit()
     db.refresh(reset_entry)
     return reset_entry
+
+def get_completed_courses(db: Session, user_id: int):
+    return (
+        db.query(models.Course)
+        .join(models.CourseInteraction)
+        .filter(
+            models.CourseInteraction.user_id == user_id,
+            models.CourseInteraction.course_progress == 100
+        )
+        .all()
+    )
