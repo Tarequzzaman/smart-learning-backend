@@ -1,6 +1,16 @@
 from pydantic import BaseModel, EmailStr, Field, conint
 from typing import List, Union
 
+
+class CourseResponse(BaseModel):
+    id: int
+    course_title: str
+    course_description: str
+    course_level: str
+
+    class Config:
+        orm_mode = True
+
 class UserCreate(BaseModel):
     first_name: str
     last_name: str

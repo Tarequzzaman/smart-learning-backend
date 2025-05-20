@@ -18,6 +18,26 @@ from app.db.mongo_db import mongodb_client
 router = APIRouter()
 
 
+@router.get("/users/{user_id}/completed-courses", response_model=List[schemas.CourseResponse])
+def get_completed_courses(
+    user_id: int,
+    db: Session = Depends(database.get_db),
+    current_user: schemas.UserOut = Depends(auth.get_current_active_user)
+):
+    if current_user.id != user_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You can only access your own completed courses."
+        )
+
+    completed_courses = crud.get_completed_courses(db=db, user_id=user_id)
+
+    if not completed_courses:
+        return []
+
+    return completed_courses
+
+
 @router.get("/users/{user_id}/selected-topics", response_model=List[schemas.TopicResponse])
 def get_user_selected_topics(
     user_id: int,
