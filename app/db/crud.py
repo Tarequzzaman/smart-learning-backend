@@ -81,7 +81,7 @@ def create_topic(db: Session, topic: schemas.TopicCreate, user_id: int):
     return new_topic
 
 def get_all_topics(db: Session):
-    return db.query(models.Topic).order_by(models.Topic.id.asc()).all()
+    return db.query(models.Topic).order_by(models.Topic.id.desc()).all()
 
 
 def get_all_courses(db: Session):
@@ -211,7 +211,8 @@ def get_enrolled_courses(db: Session, user_id: int) -> list[tuple]:
         db.query(models.Course, models.CourseInteraction)
         .join(models.CourseInteraction, models.Course.id == models.CourseInteraction.course_id)
         .filter(models.CourseInteraction.user_id == user_id)
-        .order_by(models.CourseInteraction.updated_at.asc())
+        .filter(models.CourseInteraction.course_progress < 100)
+        .order_by(models.CourseInteraction.updated_at.desc())
         .all()
     )
     return enrolled_courses
