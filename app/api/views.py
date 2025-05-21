@@ -472,7 +472,7 @@ def get_enrolled_courses(
 @router.get("/recommendations",response_model=List[schemas.CourseOut])
 def get_recommendations_for_user(
     user_id: int,
-    limit: int = 10,
+    limit: int = 48,
     db: Session = Depends(database.get_db), 
     current_user: schemas.UserOut = Depends(auth.get_current_active_user),
     ):
