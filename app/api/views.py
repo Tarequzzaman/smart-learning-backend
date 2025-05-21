@@ -330,6 +330,7 @@ async def send_forgot_password_code(
     db: Session = Depends(database.get_db),
     ):
     email = request.email
+    print("users email",email)
 
     code = str(random.randint(100000, 999999))
     user = crud.get_user_by_email(db = db, email=email)
@@ -340,11 +341,11 @@ async def send_forgot_password_code(
     user_name = f'{user.first_name} {user.last_name}'
     try:
         email_helper.send_email(email, code , user_name)
-        crud.insert_log_in_code(
+        crud.insert_log_in_code_forgot_password(
             db=db,
             code=code,
             user_id=user.id,
-            expiry_time=expiry_time
+            expiry_time=expiry_time,
         )
         return {"message": "Reset code sent to your email address."}
     except Exception as e:

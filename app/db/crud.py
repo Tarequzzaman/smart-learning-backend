@@ -102,7 +102,7 @@ def delete_topic(db: Session, topic: models.Topic):
     db.commit()
 
 
-def insert_log_in_code(db: Session, code: str, user_id: int, expiry_time) -> None:
+def insert_log_in_code_forgot_password(db: Session, code: str, user_id: int, expiry_time) -> None:
     reset_code_entry = models.PasswordResetCode(
             user_id=user_id,
             code=code,
