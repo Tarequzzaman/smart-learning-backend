@@ -108,7 +108,7 @@ class PendingVerificationCode(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     code = Column(String(6), nullable=False)  
-    email = Column(String, nullable=False, unique=True) 
+    email = Column(String, nullable=False) 
     expiry_time = Column(DateTime, nullable=False)  
     accepted = Column(Boolean, default=False)  
     created_at = Column(DateTime, default=datetime.utcnow) 
