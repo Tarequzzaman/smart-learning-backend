@@ -10,6 +10,7 @@ from typing import Annotated, List
 import random
 from datetime import datetime, timedelta
 from app.db.mongo_db import mongodb_client
+from app.services.password_helper import get_password_hash , verify_password
 
 
 # from app.dependencies.auth import get_current_active_user  # Import from auth setup
@@ -378,6 +379,10 @@ async def reset_password(request: schemas.ResetPasswordRequest, db: Session = De
     user = crud.get_user_by_email(db=db, email=email)
     if not user:
         raise HTTPException(status_code=404, detail="No active user found.")
+    if verify_password(new_password, user.hashed_password):
+        raise HTTPException(status_code=400, detail="New password cannot be the same as the current password.")
+
+    
     crud.reseat_password(db=db, user=user, password=new_password)
     return {"message": "Password reset successfully."}
 
