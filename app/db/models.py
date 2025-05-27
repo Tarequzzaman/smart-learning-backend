@@ -36,9 +36,17 @@ class User(Base):
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
     topics = relationship("Topic", back_populates="creator", cascade="all, delete-orphan")
-    topic_preferences = relationship("UserTopicPreference", back_populates="user", cascade="all, delete-orphan")
-    course_interactions = relationship("CourseInteraction", back_populates="user")
+    topic_preferences = relationship(
+        "UserTopicPreference", 
+        back_populates="user", 
+        cascade="all, delete-orphan"
+    )
 
+    course_interactions = relationship(  # ✅ FIXED name
+        "CourseInteraction",
+        back_populates="user",  # ✅ Matches CourseInteraction.user
+        cascade="all, delete-orphan"
+    )
 
 
 
@@ -50,9 +58,18 @@ class Topic(Base):
     description = Column(String)
     created_by_id = Column(Integer, ForeignKey("users.id"))
     is_published = Column(Boolean, default=False)
+
     creator = relationship("User", back_populates="topics")
-    courses = relationship("Course", back_populates="topic", cascade="all, delete-orphan")
-    user_preferences = relationship("UserTopicPreference", back_populates="topic", cascade="all, delete-orphan")
+    courses = relationship(
+        "Course",
+        back_populates="topic",
+        cascade="all, delete-orphan"
+    )
+    user_preferences = relationship(
+        "UserTopicPreference",
+        back_populates="topic",
+        cascade="all, delete-orphan"
+    )
 
 
 
@@ -82,11 +99,15 @@ class Course(Base):
     is_detail_created_by_ai = Column(Boolean, default=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
- 
+
     topic_id = Column(Integer, ForeignKey("topics.id"), nullable=False)
     topic = relationship("Topic", back_populates="courses")
-    
-    user_interactions = relationship("CourseInteraction", back_populates="course")
+
+    user_interactions = relationship(
+        "CourseInteraction",
+        back_populates="course",
+        cascade="all, delete-orphan"  # ✅ this line is essential
+    )
 
 
 
@@ -108,7 +129,7 @@ class PendingVerificationCode(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     code = Column(String(6), nullable=False)  
-    email = Column(String, nullable=False, unique=True) 
+    email = Column(String, nullable=False) 
     expiry_time = Column(DateTime, nullable=False)  
     accepted = Column(Boolean, default=False)  
     created_at = Column(DateTime, default=datetime.utcnow) 
@@ -119,19 +140,33 @@ class CourseInteraction(Base):
     __tablename__ = "course_interactions"
 
     id = Column(Integer, primary_key=True, index=True)
+
+
+
     user_id = Column(
         Integer, 
-        ForeignKey("users.id", ondelete="CASCADE"),  # ForeignKey with cascade delete
+        ForeignKey("users.id", ondelete="CASCADE"), 
         nullable=False
     )
     course_id = Column(
         Integer, 
-        ForeignKey("courses.id", ondelete="CASCADE"),  # ForeignKey with cascade delete
+        ForeignKey("courses.id", ondelete="CASCADE"), 
         nullable=False
     ) 
+
     course_progress = Column(Integer, default=0)
-    user = relationship("User", back_populates="course_interactions")
-    course = relationship("Course", back_populates="user_interactions")
+
+    user = relationship(
+        "User", 
+        back_populates="course_interactions",  # ✅ This now matches
+        passive_deletes=True
+    )
+    
+    course = relationship(
+        "Course", 
+        back_populates="user_interactions", 
+        passive_deletes=True  # ✅ Important here as well
+    )
 
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
