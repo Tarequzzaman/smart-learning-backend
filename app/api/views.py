@@ -599,3 +599,47 @@ def mark_quiz_complete(
     crud.mark_quiz_passed(
         db=db, user_id=current_user.id, course_id=course_id, section_index=section_index
     )
+
+   
+# Admin Analytics Endpoint
+
+@router.get("/dashboard/stats")
+def get_dashboard_stats(
+    db: Session = Depends(database.get_db),
+    current_user: schemas.UserOut = Depends(auth.get_current_active_user),
+):
+    if current_user.role != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not have admin permissions",
+        )
+    
+    user_count = crud.get_users_count(db)
+    topic_count = crud.get_topics_count(db)
+    most_attempted = crud.get_topic_attempt_counts(db, limit=3, least=False)
+    least_attempted = crud.get_topic_attempt_counts(db, limit=3, least=True)
+    
+    quiz_count = crud.get_quizzes_count(db) 
+    
+    passed_quizzes, completion_rate = crud.get_quizzes_completion_stats(db)
+    daily_new_users = crud.get_daily_new_users_last_7_days(db)
+
+    
+
+    return {
+        "user_count": user_count,
+        "topic_count": topic_count,
+        "most_attempted": [
+        {"title": t[1], "user_count": t[2]} for t in most_attempted
+    ],
+    "least_attempted": [
+        {"title": t[1], "user_count": t[2]} for t in least_attempted
+    ],
+        "quiz_count": quiz_count,
+        
+        "passed_quizzes": passed_quizzes,
+        "completion_rate": completion_rate,
+        "daily_new_users": daily_new_users
+
+        
+    }
