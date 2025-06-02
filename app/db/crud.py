@@ -433,7 +433,13 @@ def insert_log_in_code(db: Session, code: str, user_id: int, expiry_time: dateti
     return new_entry
 
 def get_pending_code_by_email(db: Session, email: str):
-    return db.query(models.PendingVerificationCode).filter(models.PendingVerificationCode.email == email).first()
+    return (
+        db.query(models.PendingVerificationCode)
+        .filter(models.PendingVerificationCode.email == email)
+        .filter(models.PendingVerificationCode.accepted == False)
+        .order_by(models.PendingVerificationCode.created_at.desc())
+        .first()
+    )
 
 def accept_reset_code(db: Session, reset_entry: models.PendingVerificationCode):
     reset_entry.accepted = True
