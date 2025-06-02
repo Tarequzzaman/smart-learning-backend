@@ -3,8 +3,13 @@ from app.db import models , schemas
 from app.services.password_helper import get_password_hash , verify_password
 from typing import Optional
 from datetime import datetime
-from sqlalchemy.sql.expression import func
+from sqlalchemy.sql.expression import func , cast
 from sqlalchemy.exc import IntegrityError
+from datetime import datetime, timedelta
+from datetime import timezone
+from sqlalchemy.sql.sqltypes import DATE
+
+
 
 
 
@@ -446,3 +451,85 @@ def get_completed_courses(db: Session, user_id: int):
         )
         .all()
     )
+
+
+
+    
+# =================================================================
+# Admin Analytics
+
+def get_users_count(db: Session) -> int:
+    return db.query(models.User).count()
+
+
+def get_topics_count(db: Session) -> int:
+    return db.query(models.Topic).count()
+
+
+
+
+def get_topic_attempt_counts(db: Session, limit: int = 3, least: bool = False):
+    
+
+    order_clause = func.count(func.distinct(models.CourseInteraction.user_id))
+    if least:
+        order_clause = order_clause.asc()
+    else:
+        order_clause = order_clause.desc()
+
+    query = (
+        db.query(
+            models.Topic.id,
+            models.Topic.title,
+            func.count(func.distinct(models.CourseInteraction.user_id)).label("user_count")
+        )
+        .join(models.Course, models.Course.topic_id == models.Topic.id)
+        .join(models.CourseInteraction, models.CourseInteraction.course_id == models.Course.id)
+        .group_by(models.Topic.id)
+        .order_by(order_clause)
+        .limit(limit)
+    )
+
+    return query.all()
+
+def get_quizzes_count(db: Session) -> int:
+    return db.query(models.SectionQuiz).count()
+
+
+def get_quizzes_completion_stats(db: Session):
+    total_quizzes = db.query(models.SectionQuiz).count()
+    total_passed = db.query(models.CourseSectionQuizProgress).filter(models.CourseSectionQuizProgress.passed == True).count()
+
+    completion_rate = 0
+    if total_quizzes > 0:
+        completion_rate = (total_passed / total_quizzes) * 100
+
+    return total_passed, round(completion_rate , 2)
+
+
+def get_daily_new_users_last_7_days(db: Session):
+    today = datetime.now(timezone.utc).date()
+    seven_days_ago = today - timedelta(days=6) 
+
+    results = (
+        db.query(
+            cast(models.User.created_at, DATE).label("date"),
+            func.count(models.User.id).label("user_count")
+        )
+        .filter(cast(models.User.created_at, DATE) >= seven_days_ago)
+        .group_by("date")
+        .order_by("date")
+        .all()
+    )
+
+    counts_by_date = {record.date.isoformat(): record.user_count for record in results}
+
+    daily_counts = []
+    for i in range(7):
+        day = seven_days_ago + timedelta(days=i)
+        daily_counts.append({
+            "date": day.isoformat(),
+            "count": counts_by_date.get(day.isoformat(), 0)
+        })
+
+    return daily_counts
