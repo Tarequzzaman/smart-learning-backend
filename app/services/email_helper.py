@@ -5,6 +5,11 @@ from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
+from pathlib import Path
+
+# Point to the mail_cred.json file relative to this script
+cred_path = Path(__file__).resolve().parent /  "mail_cred.json"
+token_path = Path(__file__).resolve().parent / "token.json"
 
 # Required Gmail API scope
 SCOPES = ['https://www.googleapis.com/auth/gmail.send']
@@ -12,18 +17,19 @@ SCOPES = ['https://www.googleapis.com/auth/gmail.send']
 
 def get_gmail_service():
     creds = None
-    if os.path.exists('token.json'):
-        creds = Credentials.from_authorized_user_file('token.json', SCOPES)
+    if token_path.exists():
+        creds = Credentials.from_authorized_user_file(str(token_path), SCOPES)
     if not creds or not creds.valid:
         if creds and creds.expired and creds.refresh_token:
             creds.refresh(Request())
         else:
             flow = InstalledAppFlow.from_client_secrets_file(
-                'credentials.json', SCOPES
+                str(cred_path),
+                SCOPES
             )
             creds = flow.run_local_server(port=8080)
-        with open('token.json', 'w') as token:
-            token.write(creds.to_json())
+        with open(token_path, 'w') as token_file:
+            token_file.write(creds.to_json())
 
     return build('gmail', 'v1', credentials=creds)
 
