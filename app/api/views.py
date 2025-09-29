@@ -589,7 +589,7 @@ def get_section_quizzes(
     ]
 
 
-@router.post("/courses/{course_id}/sections/{section_index}/quiz-complete", status_code=204)
+@router.post("/courses/{course_id}/sections/{section_index}/quiz-complete", status_code=200)
 def mark_quiz_complete(
     course_id: int,
     section_index: int,
