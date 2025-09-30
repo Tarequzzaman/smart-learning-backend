@@ -576,7 +576,7 @@ def get_section_quizzes(
     current_user: schemas.UserOut = Depends(auth.get_current_active_user),
 
 ):
-    quizzes = crud.get_quizes(db=db, course_id=course_id, section_index=section_index);
+    quizzes = crud.get_quizes(db=db, course_id=course_id, section_index=section_index)
     return [
         {
             "id": q.id,

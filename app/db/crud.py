@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta, timezone
+from functools import lru_cache
 from typing import Optional
 
 from fastapi import HTTPException
@@ -8,7 +9,6 @@ from sqlalchemy.sql.expression import cast, func
 from sqlalchemy.sql.sqltypes import DATE
 
 from app.db import models, schemas
-from app.db.mongo_db import mongodb_client
 from app.services.password_helper import get_password_hash, verify_password
 
 
@@ -98,11 +98,11 @@ def create_topic(db: Session, topic: schemas.TopicCreate, user_id: int):
     db.refresh(new_topic)
     return new_topic
 
-
+@lru_cache(maxsize=128, typed=False)
 def get_all_topics(db: Session):
     return db.query(models.Topic).order_by(models.Topic.id.desc()).all()
 
-
+@lru_cache(maxsize=128, typed=False)
 def get_all_courses(db: Session):
     return (
         db.query(models.Course)
@@ -110,7 +110,7 @@ def get_all_courses(db: Session):
         .all()
     )
 
-
+@lru_cache(maxsize=128, typed=False)
 def get_topic_by_id(db: Session, topic_id: int):
     return db.query(models.Topic).filter(models.Topic.id == topic_id).first()
 
@@ -430,14 +430,15 @@ def insert_quiz_question(
     db.commit()
 
 
-def get_quizes(db: Session, course_id: int, section_index):
+def get_quizes(db: Session, course_id: int, section_index: int):
+    course = db.query(models.Course).filter_by(id=course_id).first()
+    if not course:
+        raise HTTPException(status_code=404, detail="Course not found")
     return (
         db.query(models.SectionQuiz)
         .filter_by(course_id=course_id, section_index=section_index)
         .all()
     )
-
-
 
 
 def mark_quiz_passed(db: Session, user_id: int, course_id: int, section_index: int):
@@ -448,14 +449,16 @@ def mark_quiz_passed(db: Session, user_id: int, course_id: int, section_index: i
     course = db.query(models.Course).filter_by(id=course_id).first()
     if not course:
         raise HTTPException(status_code=404, detail="Course not found")
-    
 
-    section_quiz = db.query(models.SectionQuiz).filter_by(
-        course_id=course_id, section_index=section_index
-    ).first()
+    section_quiz = (
+        db.query(models.SectionQuiz)
+        .filter_by(course_id=course_id, section_index=section_index)
+        .first()
+    )
+
     if not section_quiz:
         raise HTTPException(status_code=404, detail="Section quiz not found")
-    
+
     record = (
         db.query(models.CourseSectionQuizProgress)
         .filter_by(user_id=user_id, course_id=course_id, section_index=section_index)
