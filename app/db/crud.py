@@ -440,21 +440,29 @@ def get_quizes(db: Session, course_id: int, section_index: int):
         .all()
     )
 
+@lru_cache(maxsize=256, typed=False)
+def get_course_by_id(db: Session, course_id: int):
+    return db.query(models.Course).filter(models.Course.id == course_id).first()
+
+@lru_cache(maxsize=256, typed=False)
+def section_quiz_exists(db: Session, course_id: int, section_index: int) -> bool:
+    return (
+        db.query(models.SectionQuiz)
+        .filter_by(course_id=course_id, section_index=section_index)
+        .first()
+    )
+
 
 def mark_quiz_passed(db: Session, user_id: int, course_id: int, section_index: int):
     user = get_user_by_id(db, user_id)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
-    course = db.query(models.Course).filter_by(id=course_id).first()
+    course = get_course_by_id(db, course_id)
     if not course:
         raise HTTPException(status_code=404, detail="Course not found")
 
-    section_quiz = (
-        db.query(models.SectionQuiz)
-        .filter_by(course_id=course_id, section_index=section_index)
-        .first()
-    )
+    section_quiz = section_quiz_exists(db, course_id, section_index)
 
     if not section_quiz:
         raise HTTPException(status_code=404, detail="Section quiz not found")
