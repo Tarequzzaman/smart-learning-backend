@@ -1,6 +1,5 @@
 import enum
 from datetime import datetime
-from operator import index
 
 from sqlalchemy import (
     Boolean,
@@ -163,7 +162,7 @@ class CourseInteraction(Base):
     __table_args__ = (
         UniqueConstraint("user_id", "course_id", name="uix_user_course"),
         Index("index_user_course", "user_id", "course_id"),
-        index("user_id_index", "user_id"),
+        Index("user_id_index_course_interaction", "user_id"), 
     )
 
 
